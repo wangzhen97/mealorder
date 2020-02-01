@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>员工面板</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+
+<script src="../../scripts/boot.js" type="text/javascript"></script>
+<style type="text/css">
+html, body {
+	padding: 0;
+	margin: 0;
+	border: 0;
+	height: 100%;
+	overflow: hidden;
+}
+ .asLabel .mini-textbox-border,
+    .asLabel .mini-textbox-input,
+    .asLabel .mini-buttonedit-border,
+    .asLabel .mini-buttonedit-input,
+    .asLabel .mini-textboxlist-border
+    {
+        border:0;background:none;cursor:default;
+    }
+    .asLabel .mini-buttonedit-button,
+    .asLabel .mini-textboxlist-close
+    {
+        display:none;
+    }
+    .asLabel .mini-textboxlist-item
+    {
+        padding-right:8px;
+    }    
+</style>
+</head>
+<body>
+	<form id="form1" method="post">
+
+		<fieldset style="border: solid 1px #aaa; padding: 3px;">
+			<legend>菜品信息新增</legend>
+			<div style="padding: 5px;">
+				<table>
+					<tr>
+
+						<td style="width: 150px;" align="right">
+							<input labelField="true" label="菜单编号:" id="cpId" name="cpId" class="mini-textbox asLabel"  required="true" />
+						</td>
+						<td style="width: 150px;" align="right">
+							<input name="cpName" labelField="true" label="菜品名称:" class="mini-textbox" required="true" />
+						</td>
+					</tr>
+					<!-- onvalidation="onPhoneValidation"  -->
+					<tr>
+
+						<td style="width: 150px;" align="right">
+							<input name="money" labelField="true" label="单价： " class="mini-textbox" required="true"  vtype="int;range:1,1000"  />
+						</td>
+
+		
+
+						<td style="width: 150px;" align="right">
+							<input labelField="true" label="菜品类别：" id="cpType" name="cpType" emptyText="请选择" class="mini-combobox" vtype="int"
+								required="true" url="../../data/cpType.txt" />
+						</td>
+
+
+					</tr>
+					<tr>
+						<td align="right">
+							<input labelField="true" label="上市时间：" ondrawdate="onDrawDate" id="addTime" name="addTime" class="mini-datepicker"
+								format="yyyy-MM-dd" showtime="true" required="true" />
+						</td>
+							<td style="width: 100px;" align="right">
+							<div id="canPack" name="canPack" class="mini-radiobuttonlist" labelField="true" label="能否打包： " repeatItems="2"
+								repeatLayout="table" textField="text" valueField="id" value="1" url="../../data/canPack.txt"></div>
+						</td>
+					</tr>
+					<tr>
+						<td style="width: 150px;" align="right"><!-- colspan="3" -->
+							<input name="note" labelField="true" label="备注： " class="mini-textarea"   />
+						</td>
+
+					</tr>
+				</table>
+			</div>
+		</fieldset>
+		<div style="text-align: center; padding: 10px;">
+			<a class="mini-button" onclick="onOk" style="width: 60px; margin-right: 20px;">确定</a>
+			<a class="mini-button" onclick="onCancel" style="width: 60px;">取消</a>
+		</div>
+	</form>
+	<script type="text/javascript">
+		mini.parse();
+		var form = new mini.Form("form1");
+
+		function GetData() {
+			var o = form.getData();
+			return o;
+		}
+
+		/* 设置菜品编号 */
+		setBorrowid()
+		function setBorrowid() {
+			$.ajax({
+				url : "http://localhost:8080/mealorder/MealinfoAddAction?method=SetId",
+				type : "post",
+				cache : false,
+				dataType : "json",
+				success : function(text) {
+					var t = mini.get("cpId");
+					t.setValue(text.cpId);
+				}
+			}) 
+		}
+
+		/*日期禁止  */
+		function onDrawDate(e) {
+			var date = e.date;
+			var d = new Date();
+
+			if (date.getTime() > d.getTime()) {
+				e.allowSelect = false;
+			}
+		}
+
+		/*保存添加信息  */
+		function SaveData() {
+			var o = form.getData();
+			
+			form.validate();
+			if (form.isValid() == false)
+				return;
+
+			var json = mini.encode(o);
+			$.ajax({
+				url : "http://localhost:8080/mealorder/MealinfoAddAction?method=addMealinfo",
+				type : 'post',
+				data : {
+					data : json
+				},
+				cache : false,
+				success : function(text) {
+					mini.alert(text, "提示信息", function() {
+						if(text!="菜名重复，请重新添加"){
+						CloseWindow();
+						}
+					});
+				},
+				error : function(jqXHR, textStatus, errorThrown) {
+					alert(jqXHR.responseText);
+					CloseWindow();
+				}
+			});
+		}
+         /*窗口关闭  */
+		function CloseWindow(action) {
+			if (action == "close" && form.isChanged()) {
+				if (confirm("数据被修改了，是否先保存？")) {
+					return false;
+				}
+			}
+			if (window.CloseOwnerWindow)
+				return window.CloseOwnerWindow(action);
+			else
+				window.close();
+		}
+		function onOk(e) {
+			SaveData();
+		}
+		function onCancel(e) {
+			CloseWindow("cancel");
+		}
+		//////////////////////////////////
+		function onDeptChanged(e) {
+			var deptCombo = mini.getbyName("dept_id");
+			var positionCombo = mini.getbyName("position");
+			var dept_id = deptCombo.getValue();
+
+			positionCombo.load("../data/AjaxService.jsp?method=GetPositionsByDepartmenId&id=" + dept_id);
+			positionCombo.setValue("");
+		}
+	</script>
+</body>
+</html>

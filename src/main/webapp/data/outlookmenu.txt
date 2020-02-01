@@ -1,0 +1,5 @@
+﻿[
+	{ id: "mealorder", text: "功能列表"},
+	{ id: "mealmanagement", pid: "mealorder", text: "菜单信息管理", url: "pages/mealinfo/mealinfo_list.html" , iconPosition: "top"},
+	{ id: "ordermanagement", pid: "mealorder", text: "订单信息管理", url: "pages/orderinfo/orderinfo_list.html", iconPosition: "top" },
+]

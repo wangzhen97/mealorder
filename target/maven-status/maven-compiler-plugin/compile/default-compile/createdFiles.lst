@@ -1,0 +1,7 @@
+com\epoint\studentmanagement\util\DataSourceUtil.class
+com\epoint\studentmanagement\util\ConfigUtil.class
+com\epoint\studentmanagement\util\JDBCUtil.class
+com\epoint\studentmanagement\bizlogic\studentinfo\domain\Studentinfo.class
+com\epoint\studentmanagement\action\studentinfo\StudentinfoListAction.class
+com\epoint\studentmanagement\dao\StudentinfoDao.class
+com\epoint\studentmanagement\bizlogic\studentinfo\StudentinfoService.class

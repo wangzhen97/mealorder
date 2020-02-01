@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<script src="../../scripts/jquery.min.js" type="text/javascript"></script>
+<script src="../../scripts/boot.js" type="text/javascript"></script>
+
+</head>
+<body>
+	<h1>菜单信息列表</h1>
+	<div style="width: 1100px;">
+		<div class="mini-toolbar" style="border-bottom: 0; padding: 0px;">
+			<table style="width: 100%;">
+				<tr>
+					<td style="width: 40%;">
+						<a class="mini-button" iconCls="icon-add" onclick="add()">增加</a>
+						<a class="mini-button" iconCls="icon-remove" onclick="remove()">删除</a>
+					</td>
+					<td style="white-space: nowrap; width: 60%">
+						<input id="key" class="mini-textbox" emptyText="请输入菜品" style="width: 150px;" onenter="onKeyEnter" />
+						<input labelField="true" label="菜品：" id="key2" name="cpType" style="display: inline-block" emptyText="请选择"
+							onvaluechanged="search()" class="mini-combobox" vtype="int" required="true" url="../../data/cpType.txt" />
+						<a class="mini-button" onclick="search()">查询</a>
+						<a class="mini-button" onclick="clear()">清空</a>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+
+	<div id="datagrid1" class="mini-datagrid" style="width: 100%; height: 400px;"
+		url="http://localhost:8080/mealorder/MealinfoListAction?method=queryList" idField="id" multiSelect="true"
+		allowResize="true" sizeList="[10,15,20,30]" pageSize="10" allowCellEdit="true" allowCellSelect="true" multiSelect="true"
+		editNextOnEnterKey="true" editNextRowCell="true">
+		<div property="columns">
+			<!--<div type="indexcolumn"></div>        -->
+			<div type="checkcolumn"></div>
+			<div type="indexcolumn"></div>
+			<div field="cpId" width="120" headerAlign="center">菜单编号</div>
+			<div field="cpName" width="120" headerAlign="center">菜名</div>
+			<div field="cpType" width="120" headerAlign="center" renderer="onCpTypeRenderer">类别</div>
+			<div field="money" width="150" headerAlign="center" renderer="checkMoney">单价</div>
+			<div field="canPack" width="150" headerAlign="center" renderer="canPackRenderer">能否打包</div>
+			<div field="count" width="150" headerAlign="center">已售数量</div>
+			<div field="addTime" width="120" headerAlign="center" dateFormat="yyyy-MM-dd">上市时间</div>
+			<div name="action" width="150" headerAlign="center" align="center" renderer="onActionRenderer" cellStyle="padding:0;">操作按钮</div>
+		</div>
+	</div>
+
+
+	<script type="text/javascript">
+		mini.parse();
+		var cpType;
+		getCpTypeObject()
+		var grid = mini.get("datagrid1");
+		grid.load();
+		/*生成控件 */
+		function onActionRenderer(e) {
+			var grid = e.sender;
+			var record = e.record;
+			var uid = record._uid;
+			var rowIndex = e.rowIndex;
+			var s = '<a class="mini-button" iconCls="icon-edit"  href="javascript:editRow(\'' + uid + '\')">编辑</a>&nbsp;&nbsp;' + '<a class="mini-button" iconCls="icon-remove" href="javascript:delRow(\'' + uid + '\')">删除</a>&nbsp;&nbsp;';
+			return s;
+		}
+		// 渲染打包信息
+		function canPackRenderer(e) {
+			if (e.value == '1') {
+				return '能';
+			} else {
+				return "不能";
+			}
+		}
+		/*行删除  */
+		function delRow(row_uid) {
+			var row = grid.getRowByUID(row_uid);
+			if (row) {
+				mini.confirm("确定删除此记录？", "标题", function(action) {
+					if (action == "ok") {
+						grid.loading("删除中，请稍后......");
+						$.ajax({
+							url : "http://localhost:8080/mealorder/MealinfoEditAction?method=deleteMealinfo",
+							type : "post",
+							data : {
+								"cpId" : row.cpId
+							},
+							success : function(text) {
+								mini.alert(text)
+								grid.reload();
+							},
+							error : function() {
+								mini.alert("删除失败")
+							}
+						});
+					} else {
+						grid.reload();
+					}
+				})
+			}
+		}
+		/* 渲染信息 */
+		function getCpTypeObject() {
+			$.ajax({
+				url : "../../data/cpType.txt",
+				success : function(text) {
+					cpType = mini.decode(text);
+				}
+			})
+		}
+		/*菜品种类  */
+		function onCpTypeRenderer(e) {
+			for (var i = 0; i < cpType.length; i++) {
+				var g = cpType[i];
+				if (g.id == e.value)
+					return g.text;
+			}
+			return "";
+		}
+
+		/* 改变颜色和背景 */
+		function checkMoney(e) {
+			if (e.record.money > 35) {
+				e.cellStyle = "color:red;background:yellow;font-weight: bold"
+			}
+			return e.record.money;
+		}
+
+		/*添加菜品  */
+		function add() {
+			mini.open({
+				targetWindow : window,
+				url : "mealinfo_add.html",
+				title : "新增菜品信息",
+				width : 600,
+				height : 400,
+				onload : function() {
+				},
+				ondestroy : function(action) {
+					var iframe = this.getIFrameEl();
+					grid.reload();
+				}
+			});
+		}
+
+		/* 编辑菜单信息 */
+		function editRow(e) {
+			var row = grid.getRowByUID(e);
+			mini.open({
+				targetWindow : window,
+				url : "mealinfo_update.html",
+				title : "编辑菜品信息",
+				width : 600,
+				height : 400,
+				onload : function() {
+					var iframe = this.getIFrameEl();
+					var data = {
+						cpId : row.cpId
+					};
+					iframe.contentWindow.SetData(data);
+				},
+				ondestroy : function(action) {
+					var iframe = this.getIFrameEl();
+					grid.reload();
+				}
+			});
+		}
+
+		/*批量删除  */
+		function remove() {
+			var rows = grid.getSelecteds();
+			if (rows.length > 0) {
+				mini.confirm("确定删除此记录？", "标题", function(action) {
+					if (action == "ok") {
+						var ids = [];
+						for (var i = 0, l = rows.length; i < l; i++) {
+							var r = rows[i];
+							ids.push(r.cpId);
+						}
+						var id = ids.join(',');
+						grid.loading("操作中，请稍后......");
+						$.ajax({
+							url : "http://localhost:8080/mealorder/MealinfoEditAction?method=deleteMealinfo",
+							type : "post",
+							data : {
+								"cpId" : id
+							},
+							success : function(text) {
+								mini.alert(text);
+								grid.reload();
+							},
+							error : function() {
+							}
+						});
+					} else {
+						alert("请选中一条记录");
+					}
+				})
+
+			}
+		}
+		/*查找  */
+		function search() {
+			var key = mini.get("key").getValue();
+			var key2 = mini.get("key2").getValue();
+			grid.load({
+				cpnamesearch : key,
+				cptypesearch : key2
+			});
+		}
+		function onKeyEnter(e) {
+			search();
+		}
+		/* 清空 */
+		function clear() {
+			var key = mini.get("key").setValue("");
+			var key2 = mini.get("key2").setValue("");
+			grid.load({
+				booknamesearch : key,
+				booktypesearch : key2
+			});
+		}
+	</script>
+
+</body>
+</html>
